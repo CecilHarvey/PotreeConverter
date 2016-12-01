@@ -34,6 +34,9 @@ using std::binary_function;
 using std::map;
 
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 
 namespace Potree{
@@ -193,6 +196,44 @@ float psign(float value){
 	}else{
 		return 1.0;
 	}
+}
+
+
+
+// see http://stackoverflow.com/questions/1023306/finding-current-executables-path-without-proc-self-exe
+string getExecutablePath(){
+
+	string path = "./";
+	
+#ifdef _WIN32
+	char  buffer[MAX_PATH]; 
+	GetModuleFileName( NULL, buffer, MAX_PATH );
+
+	string::size_type pos = string( buffer ).find_last_of( "\\/" );
+	path = string( buffer ).substr( 0, pos);
+#elif defined(__linux__)
+	// http://stackoverflow.com/questions/5525668/how-to-implement-readlink-to-find-the-path
+	char buff[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff)-1);
+    if (len != -1) {
+      buff[len] = '\0';
+      path = string(buff);
+    }else{
+		cout << "WARNING: Potree was unable to determine to path to the executable." << endl;
+		cout << "Using current work dir as executable directory. Make sure to run potree inside the directory with the executable to avoid problems." << endl;
+	}
+//#elif BOOST_OS_MACOS
+	// TODO 
+	// http://stackoverflow.com/questions/799679/programatically-retrieving-the-absolute-path-of-an-os-x-command-line-app
+//#elif BOOST_OS_BSD
+	// TODO
+#else
+	cout << "WARNING: Potree was unable to identify the operating system and as a result, the directory of the executable." << endl;
+	cout << "Using current work dir as executable directory. Make sure to run potree inside the directory with the executable to avoid problems." << endl;
+	path = "./";
+#endif
+
+	return path;
 }
 
 }
